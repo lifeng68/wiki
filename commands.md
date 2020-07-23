@@ -19,3 +19,13 @@ sudo echo "/corefile/core-%e-%p-%t" > /proc/sys/kernel/core_pattern
 sudo mkdir /corefile
 sudo chmod -R 777 /corefile
 ```
+
+How to enable asan version without recompile grpc
+
+```
+如果仅仅想测试iSulad的asan而不是grpc，则需要打上社区补丁
+https://github.com/grpc/grpc/pull/22325
+
+然后在iSulad的CMakefileList.txt中，定义该宏
+
+```
