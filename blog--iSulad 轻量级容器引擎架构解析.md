@@ -210,7 +210,7 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
 
 ​	iSulad采用DDD（Domain Driven Design，领域驱动设计）的思想进行架构分层组织，层次划分如下：
 
-<img src="ddd.jpg" alt="iSulad-img-single" style="zoom:100%;" />
+<img src="DDD.jpg" alt="ddd" style="zoom:100%;" />
 
 ​	各逻辑分层划分以及对应的职责如下：
 
