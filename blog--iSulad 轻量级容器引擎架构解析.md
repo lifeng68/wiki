@@ -217,7 +217,7 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
 | **层次**   | **职责划分**                                                 |
 | ---------- | ------------------------------------------------------------ |
 | 用户界面   | 负责向用户展现信息以及解释用户命令                           |
-| 接口层     | 客户端服务端通信接口、CRI接口的定义                          |
+| 接口层     | 客户端服务端通信接口、CRI接口的定义与实现                    |
 | 应用层     | 调用领域层的接口，实现对应的业务应用                         |
 | 领域层     | 本层包含关于领域的信息，这是iSulad软件的核心所在。包含多种模块，业务逻辑实际的执行层 |
 | 基础设施层 | 本层作为其他层的支撑库。它提供各种工具函数供其他层次调用使用 |
@@ -228,7 +228,9 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
 
 ​	其中api目录中定义了iSulad 对外提供的gRPC服务的proto文件，在编译时会使用grpc生成对应客户端、服务端代码。
 
-### 用户界面层
+### 各层代码组织结构
+
+#### 用户界面层
 
 ​	用户界面层的代码位于src/cmd目录下，在该目录下，提供了iSulad对外的命令行接口。在cmd目录下，提供了isula客户端、isulad服务端、isulad-shim 三个命令行相关的命令行解析、参数显示。代码组织结构如下：
 
@@ -264,7 +266,7 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
     └── terminal.h
 ```
 
-### 接口层
+#### 接口层
 
 ​	iSulad 的接口层代码位于src/daemon/entry目录，其中提供了客户端服务端通信接口、CRI接口的定义。
 
@@ -288,8 +290,6 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
     ├── cni_network_plugin.h
     ├── cri_container.cc # cri接口中容器相关操作请求接口处理
     ├── cri_container.h
-    ├── cri_helpers.cc
-    ├── cri_helpers.h
     ├── cri_image_service.cc # cri接口中image相关操作请求接口处理
     ├── cri_image_service.h
     ├── cri_runtime_service.cc  # cri接口中runtime相关操作请求接口处理
@@ -298,21 +298,10 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
     ├── cri_sandbox.h
     ├── cri_security_context.cc # cri接口中安全配置处理
     ├── cri_security_context.h
-    ├── cri_services.h
-    ├── errors.cc
-    ├── errors.h
-    ├── naming.cc
-    ├── naming.h
-    ├── network_plugin.cc
-    ├── network_plugin.h
-    ├── request_cache.cc
-    ├── request_cache.h
-    ├── sysctl_tools.c
-    ├── sysctl_tools.h
     └── websocket  # 使用websocket服务处理CRI 流式服务请求
 ```
 
-### 应用层
+#### 应用层
 
 ​	iSulad 的应用层代码位于src/daemon/executor目录，其作用为调用领域层的接口，实现对应的业务应用，属于业务调度层。可以从文件夹的命名中看到，应用层分别实现了image 和 runtime的两种业务模块。
 
@@ -342,7 +331,7 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
     └── image_cb.h
 ```
 
-### 领域层
+#### 领域层
 
 ​	领域层包含领域的信息，这是iSulad软件的核心所在。其中包含各个业务模块，是业务逻辑实际的执行层。领域层代码位于 src/daemon/modules。
 
@@ -428,7 +417,7 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
 
 
 
-### 基础设施层
+#### 基础设施层
 
 ​	基础设施层位于src/utils目录下，本层作为其他层的支撑库。它提供各种工具函数供其他层次调用使用：
 
@@ -461,21 +450,7 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
 │   ├── utils_base64.c
 │   ├── utils_base64.h
 │   ├── utils.c
-│   ├── utils_convert.c
-│   ├── utils_convert.h
-│   ├── utils_file.c
-│   ├── utils_file.h
-│   ├── utils_fs.c
-│   ├── utils_fs.h
-│   ├── utils.h
-│   ├── utils_regex.c
-│   ├── utils_regex.h
-│   ├── utils_string.c
-│   ├── utils_string.h
-│   ├── utils_timestamp.c
-│   ├── utils_timestamp.h
-│   ├── utils_verify.c
-│   └── utils_verify.h
+│	....
 ├── http # http 处理工具函数，包含http请求、解析、认证等工具
 │   ├── certificate.c
 │   ├── certificate.h
@@ -501,5 +476,66 @@ drwx------ 3 root root  4096 7月  27 16:25 mounts
     └── util_gzip.h
 ```
 
+### 调用流程
 
+可以借助**Structure101** 代码分析工具，梳理出iSulad各个代码目录之前的调用依赖关系。
 
+<img src="call_map.jpg" alt="iSulad" style="zoom:100%;" />
+
+首先，用户界面层（cmd）作为上层，仅会调用其他模块的接口，不会被其他模块所依赖。cmd会调用client目录中的函数，与daemon端进行通信。由于cmd目录中存在iSulad daemon的命令行接口，因此会依赖daemon目录下的函数定义。
+
+daemon目录作为服务端代码的顶层目录，其中包含接口层（entry）、应用层（executor）、领域层（modules）的代码。接口层作为调用daemon服务的入口，需要调用其他层中的函数进行业务调度处理，而不会被其他层次所依赖。应用层需要调用领域层（modules）中各个模块的接口来实现具体的业务。
+
+modules目录作为iSulad的核心领域层代码，包含各个子功能模块的具体实现。以image模块为例，首先在src/daemon/modules/api 中提供了image_api.h，屏蔽了各种不同镜像格式的差异，对外提供统一的image操作函数接口。
+
+```c
+int image_module_init(const isulad_daemon_configs *args);
+
+void image_module_exit();
+
+int im_list_images(const im_list_request *request, im_list_response **response);
+
+int im_rm_image(const im_rmi_request *request, im_remove_response **response);
+
+int im_tag_image(const im_tag_request *request, im_tag_response **response);
+
+int im_inspect_image(const im_inspect_request *request, im_inspect_response **response);
+
+int im_import_image(const im_import_request *request, char **id);
+
+int im_load_image(const im_load_request *request, im_load_response **response);
+
+int im_pull_image(const im_pull_request *request, im_pull_response **response);
+
+char *im_get_image_type(const char *image, const char *external_rootfs);
+
+bool im_config_image_exist(const char *image_name);
+
+int im_login(const im_login_request *request, im_login_response **response);
+
+int im_logout(const im_logout_request *request, im_logout_response **response);
+
+int im_container_export(const im_export_request *request);
+
+void free_im_export_request(im_export_request *ptr);
+
+```
+
+在镜像管理模块内部，对不同格式的镜像操作进行区分。
+
+```c
+static const struct bim_type g_bims[] = {
+#ifdef ENABLE_OCI_IMAGE
+    {
+        .image_type = IMAGE_TYPE_OCI,
+        .ops = &g_oci_ops,
+    },
+#endif
+    { .image_type = IMAGE_TYPE_EXTERNAL, .ops = &g_ext_ops },
+#ifdef ENABLE_EMBEDDED_IMAGE
+    { .image_type = IMAGE_TYPE_EMBEDDED, .ops = &g_embedded_ops },
+#endif
+};
+```
+
+其他模块也都是类似的设计，具体深入到不同模块的详细解析，在后续的博客中会一一进行分析。
