@@ -56,6 +56,76 @@ COMMANDS:
 	wait   	Block until one or more containers stop, then print their exit codes
 ```
 
+使用举例：
+
+##### 1)  运行容器
+
+​    运行容器指创建一个新的容器，并启动该容器，即使用指定的容器镜像创建容器读写层，并且为运行指定的命令做好准备。创建完成后，使用指定的命令启动该容器。
+
+```bash
+# isula create -it busybox
+9c2c13b6c35f132f49fb7ffad24f9e673a07b7fe9918f97c0591f0d7014c713b
+# isula start 9c2c13b6c35f
+```
+
+​    也可以通过isula run命令直接运行一个新的容器。
+
+```bash
+# isula run -itd busybox
+133a65418cd7d95ae83ba611cae1b1c198de34a142e0b05dfbdeda01c2867d50
+```
+
+##### 2)  暂停/恢复容器
+
+暂停容器指通过freezer cgroup挂起指定容器中的所有进程，恢复容器为暂停容器的逆过程，用于恢复被暂停容器中所有进程。
+
+```bash
+# isula pause 9c2c13b6c35f
+9c2c13b6c35f132f49fb7ffad24f9e673a07b7fe9918f97c0591f0d7014c713b
+
+# isula unpause 9c2c13b6c35f
+9c2c13b6c35f132f49fb7ffad24f9e673a07b7fe9918f97c0591f0d7014c713b
+```
+
+##### 3) 销毁容器
+
+销毁容器指停止并删除容器。首先向容器中的首进程发送SIGTERM信号以通知容器退出，如果在指定时间（默认为10s）内容器未停止，则再发送SIGKILL信号时主动杀死容器进程。无论容器以何种方式退出，最后都会回收和删除该容器所占用资源。
+
+```bash
+# isula stop 9c2c13b6c35f
+9c2c13b6c35f132f49fb7ffad24f9e673a07b7fe9918f97c0591f0d7014c713b
+
+# isula rm 9c2c13b6c35f
+9c2c13b6c35f132f49fb7ffad24f9e673a07b7fe9918f97c0591f0d7014c713b
+```
+
+也可以通过更简洁的方式强制销毁容器。
+
+```bash
+# isula rm –f 133a65418cd7
+133a65418cd7d95ae83ba611cae1b1c198de34a142e0b05dfbdeda01c2867d50
+```
+
+##### 4) 从镜像仓库拉取容器镜像
+
+拉取容器镜像指的是从远程镜像仓库拉取镜像到本地主机。这里的‘远程’和‘本地’是相对的，可能都是本地主机。
+
+```bash
+# isula pull busybox
+Image "busybox" pulling
+Image "busybox@sha256:bf510723d2cd2d4e3f5ce7e93bf1e52c8fd76831995ac3bd3f90ecc866643aff" pulled
+```
+
+##### 5) 删除容器镜像
+
+删除容器镜像指的是从本地保存的容器镜像中删除指定的容器镜像。
+
+```bash
+# isula rmi busybox
+
+Image "busybox" removed
+```
+
 ### 支持 CRI 标准协议
 
 ​	CRI(Container Runtime Interface)是由 K8S 定义的容器引擎需要向 k8S 对外提供的容器和镜像的服务的接口,供容器引擎接入 K8S。
